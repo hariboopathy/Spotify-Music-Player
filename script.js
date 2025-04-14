@@ -9,7 +9,6 @@ let gif = document.getElementById('gif');
 let masterSongName = document.getElementById('masterSongName');
 let songItems = Array.from(document.getElementsByClassName('songItem'));
 let isShuffleMode = false;
-const shuffleButton = document.getElementById('shuffle');
 
 let songs = [
     {songName: "Eminem - Without Me (Official Music Video)", filePath: "songs/1.mp3", coverPath: "covers/1.jpeg"},
@@ -18,111 +17,119 @@ let songs = [
     {songName: "The Real SlimShady -Eminem", filePath: "songs/4.mp3", coverPath: "covers/4.jpeg"},
     {songName: "Rap God by Eminem", filePath: "songs/5.mp3", coverPath: "covers/5.jpeg"},
     {songName: "Eminem - Mockingbird ", filePath: "songs/6.mp3", coverPath: "covers/6.jpeg"},
-    {songName: "See You again - charile puth", filePath: "songs/7.mp3", coverPath: "covers/7.jpeg"},
-    {songName: "Am I wrong - Nico & Winz", filePath: "songs/8.mp3", coverPath: "covers/8.jpeg"},
-    {songName: "Lover Boy - A wall ", filePath: "songs/9.mp3", coverPath: "covers/9.jpeg"},
+    {songName: "See You again - Charlie Puth", filePath: "songs/7.mp3", coverPath: "covers/7.jpeg"},
+    {songName: "Am I Wrong - Nico & Vinz", filePath: "songs/8.mp3", coverPath: "covers/8.jpeg"},
+    {songName: "Lover Boy - Awall", filePath: "songs/9.mp3", coverPath: "covers/9.jpeg"},
     {songName: "Bones - Imagine Dragons", filePath: "songs/10.mp3", coverPath: "covers/10.jpg"},
-]
+];
 
-songItems.forEach((element, i)=>{ 
-    element.getElementsByTagName("img")[0].src = songs[i].coverPath; 
-    element.getElementsByClassName("songName")[0].innerText = songs[i].songName; 
-})
- 
+// Ensure the DOM is fully loaded before adding event listeners
+document.addEventListener("DOMContentLoaded", function () {
+    let previousButton = document.getElementById("previous"); 
+    if (previousButton) {
+        previousButton.addEventListener("click", rewindToPreviousSong);
+    } else {
+        console.error("ERROR: 'previous' button not found!");
+    }
+});
+
+// Update song list UI
+songItems.forEach((element, i) => {
+    element.getElementsByTagName("img")[0].src = songs[i].coverPath;
+    element.getElementsByClassName("songName")[0].innerText = songs[i].songName;
+});
 
 // Handle play/pause click
-masterPlay.addEventListener('click', ()=>{
-    if(audioElement.paused || audioElement.currentTime<=0){
+masterPlay.addEventListener("click", () => {
+    if (audioElement.paused || audioElement.currentTime <= 0) {
         audioElement.play();
-        masterPlay.classList.remove('fa-play-circle');
-        masterPlay.classList.add('fa-pause-circle');
-
+        masterPlay.classList.remove("fa-play-circle");
+        masterPlay.classList.add("fa-pause-circle");
         gif.style.opacity = 1;
-    }
-    else{
+    } else {
         audioElement.pause();
-        masterPlay.classList.remove('fa-pause-circle');
-        masterPlay.classList.add('fa-play-circle');
+        masterPlay.classList.remove("fa-pause-circle");
+        masterPlay.classList.add("fa-play-circle");
         gif.style.opacity = 0;
     }
-})
-// Listen to Events
-audioElement.addEventListener('timeupdate', ()=>{ 
-    // Update Seekbar
-    progress = parseInt((audioElement.currentTime/audioElement.duration)* 100); 
+});
+
+// Listen to time updates and update progress bar
+audioElement.addEventListener("timeupdate", () => {
+    let progress = parseInt((audioElement.currentTime / audioElement.duration) * 100);
     myProgressBar.value = progress;
-})
+});
 
-myProgressBar.addEventListener('change', ()=>{
-    audioElement.currentTime = myProgressBar.value * audioElement.duration/100;
-})
+// Seek in the song
+myProgressBar.addEventListener("change", () => {
+    audioElement.currentTime = (myProgressBar.value * audioElement.duration) / 100;
+});
 
-const makeAllPlays = ()=>{
-    Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
-        element.classList.remove('fa-pause-circle');
-        element.classList.add('fa-play-circle');
-    })
-    
-}
+const makeAllPlays = () => {
+    Array.from(document.getElementsByClassName("songItemPlay")).forEach((element) => {
+        element.classList.remove("fa-pause-circle");
+        element.classList.add("fa-play-circle");
+    });
+};
 
-Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
-    element.addEventListener('click', (e)=>{ 
-        makeAllPlays();
-        songIndex = parseInt(e.target.id);
-        e.target.classList.remove('fa-play-circle');
-        e.target.classList.add('fa-pause-circle');
-        audioElement.src = `songs/${songIndex+1}.mp3`;
-        masterSongName.innerText = songs[songIndex].songName;
-        audioElement.currentTime = 0;
-        audioElement.play();
-        gif.style.opacity = 1;
-        masterPlay.classList.remove('fa-play-circle');
-        masterPlay.classList.add('fa-pause-circle');
-    })
-})
+// Play a specific song
+Array.from(document.getElementsByClassName("songItemPlay")).forEach((element) => {
+    element.addEventListener("click", (e) => {
+        const clickedIndex = parseInt(e.target.id);
 
-document.getElementById('next').addEventListener('click', ()=>{
-    if(songIndex>=9){
-        songIndex = 0
-    }
-    else{
+        if (songIndex === clickedIndex && !audioElement.paused) {
+            // If clicking the same song that's playing -> pause it
+            audioElement.pause();
+            e.target.classList.remove("fa-pause-circle");
+            e.target.classList.add("fa-play-circle");
+            masterPlay.classList.remove("fa-pause-circle");
+            masterPlay.classList.add("fa-play-circle");
+            gif.style.opacity = 0;
+        } else {
+            // Play the selected song
+            makeAllPlays();
+            songIndex = clickedIndex;
+            e.target.classList.remove("fa-play-circle");
+            e.target.classList.add("fa-pause-circle");
+            audioElement.src = songs[songIndex].filePath;
+            masterSongName.innerText = songs[songIndex].songName;
+            audioElement.currentTime = 0;
+            audioElement.play();
+            gif.style.opacity = 1;
+            masterPlay.classList.remove("fa-play-circle");
+            masterPlay.classList.add("fa-pause-circle");
+        }
+    });
+});
+
+
+// Next song functionality
+document.getElementById("next").addEventListener("click", () => {
+    if (songIndex >= songs.length - 1) {
+        songIndex = 0;
+    } else {
         songIndex += 1;
     }
-    audioElement.src = `songs/${songIndex+1}.mp3`;
-    masterSongName.innerText = songs[songIndex].songName;
-    audioElement.currentTime = 0;
-    audioElement.play();
-    masterPlay.classList.remove('fa-play-circle');
-    masterPlay.classList.add('fa-pause-circle');
+    playSelectedSong();
+});
 
-})
-const rewindButton = document.getElementById('rewind');
-
-// Add click event listeners to the buttons
-shuffleButton.addEventListener('click', toggleShuffleMode);
-rewindButton.addEventListener('click', rewindToPreviousSong);
-
-// Define the shuffle function
+// Shuffle mode toggle
 function toggleShuffleMode() {
-    isShuffleMode = !isShuffleMode; // Toggle shuffle mode
+    isShuffleMode = !isShuffleMode;
 
-    // Update the shuffle button's appearance based on shuffle mode
     if (isShuffleMode) {
-        shuffleButton.classList.add('active'); // Add a CSS class for visual indication
+        shuffleButton.classList.add("active");
     } else {
-        shuffleButton.classList.remove('active'); // Remove the CSS class
+        shuffleButton.classList.remove("active");
     }
 }
 
-// Define the rewind function
+// Rewind to previous song
 function rewindToPreviousSong() {
     if (isShuffleMode) {
-        // Handle shuffle mode rewind logic here
-        // For example, select a random song and play it
         const randomIndex = getRandomSongIndex();
         playSongAtIndex(randomIndex);
     } else {
-        // Handle regular rewind logic here
         if (songIndex > 0) {
             songIndex--;
         } else {
@@ -132,40 +139,69 @@ function rewindToPreviousSong() {
     }
 }
 
-// Function to get a random song index
+// Get a random song index
 function getRandomSongIndex() {
-    const currentIndex = songIndex;
     let randomIndex;
     do {
         randomIndex = Math.floor(Math.random() * songs.length);
-    } while (randomIndex === currentIndex);
+    } while (randomIndex === songIndex);
     return randomIndex;
 }
 
-// Function to play a song by its index
+// Play a song by index
 function playSongAtIndex(index) {
     songIndex = index;
+    playSelectedSong();
+}
+
+// Play the selected song
+function playSelectedSong() {
     audioElement.src = songs[songIndex].filePath;
     masterSongName.innerText = songs[songIndex].songName;
     audioElement.currentTime = 0;
     audioElement.play();
-    masterPlay.classList.remove('fa-play-circle');
-    masterPlay.classList.add('fa-pause-circle');
+    masterPlay.classList.remove("fa-play-circle");
+    masterPlay.classList.add("fa-pause-circle");
     gif.style.opacity = 1;
 }
-
-
-document.getElementById('previous').addEventListener('click', ()=>{
-    if(songIndex<=0){
-        songIndex = 0
+document.addEventListener("DOMContentLoaded", function () {
+    let shuffleButton = document.getElementById("shuffle");
+    if (shuffleButton) {
+        shuffleButton.addEventListener("click", toggleShuffleMode);
+    } else {
+        console.error("ERROR: 'shuffle' button not found! Check your HTML.");
     }
-    else{
-        songIndex -= 1;
+});
+
+function toggleShuffleMode() {
+    let shuffleButton = document.getElementById("shuffle");
+    if (!shuffleButton) {
+        console.error("ERROR: Shuffle button not found!");
+        return;
     }
-    audioElement.src = `songs/${songIndex+1}.mp3`;
-    masterSongName.innerText = songs[songIndex].songName;
-    audioElement.currentTime = 0;
-    audioElement.play();
-    masterPlay.classList.remove('fa-play-circle');
-    masterPlay.classList.add('fa-pause-circle');
-})
+
+    isShuffleMode = !isShuffleMode;
+    shuffleButton.classList.toggle("active");
+}
+
+document.getElementById("homeBtn").addEventListener("click", () => {
+    location.reload(); // Reloads the current page
+});
+
+document.getElementById("aboutBtn").addEventListener("click", () => {
+    const container = document.querySelector(".container");
+    container.innerHTML = `
+        <div style="padding: 20px; color: black; font-size: 26px;">
+            <h2>About Eminem</h2>
+            <p >
+                Eminem, born Marshall Bruce Mathers III, is an American rapper, songwriter, and record producer. 
+                He is among the best-selling music artists of all time, known for his rapid-fire delivery, 
+                clever lyrics, and controversial themes.
+            </p>
+            <p>
+                Some of his most famous tracks include "Lose Yourself", "Rap God", "Mockingbird", and "The Real Slim Shady".
+                Eminem has won numerous awards including multiple Grammys and an Academy Award.
+            </p>
+        </div>
+    `;
+});
